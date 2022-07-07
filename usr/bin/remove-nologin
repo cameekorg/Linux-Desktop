@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "Removing /run/nologin file"
+rm -f /run/nologin
+echo "Done"
