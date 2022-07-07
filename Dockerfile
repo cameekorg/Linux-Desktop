@@ -93,7 +93,6 @@ RUN dnf install -y gnu-free-fonts-common
 RUN dnf install -y gnu-free-mono-fonts
 RUN dnf install -y gnu-free-sans-fonts
 RUN dnf install -y gnu-free-serif-fonts
-###RUN dnf install -y novnc python3-websockify numpy
 RUN dnf install -y tigervnc-server
 RUN dnf remove -y xfce4-power-manager
 RUN dnf remove -y xfce4-screensaver

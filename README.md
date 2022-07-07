@@ -54,5 +54,9 @@ git clone https://github.com/novnc/noVNC.git
 cd /tmp/noVNC
 git checkout tags/v1.3.0
 cd /tmp/noVNC/utils
+./novnc_proxy --vnc localhost:5901 &
+pid=$!
+sleep 20
+kill ${pid}
 ```
 
