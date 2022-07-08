@@ -9,6 +9,8 @@ ARG PASSWORD=drowssap
 ARG DISPLAY=1
 ARG TIMEZONE=Europe/Prague
 
+ARG NOVNC_VERSION="1.3.0"
+#ARG NOVNC_VERSION=""
 
 # Environment Variables
 # ---------------------
@@ -36,12 +38,17 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == system
 RUN chkconfig sshd on
 
 
+# Copy Configurations
+# -------------------
+COPY copy-configs /usr/local/copy-configs/
+
+
 # Remove Nologin Service Fix
 # --------------------------
 # Handle issues with Nologin after boot.
 # Ref: https://unix.stackexchange.com/questions/487742/system-is-booting-up-unprivileged-users-are-not-permitted-to-log-in-yet
-COPY usr/bin/remove-nologin /usr/bin/remove-nologin
-COPY etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service
+RUN cp /usr/local/copy-configs/usr/bin/remove-nologin /usr/bin/remove-nologin
+RUN cp /usr/local/copy-configs/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service
 RUN chmod 755 /usr/bin/remove-nologin
 RUN chmod 644 /etc/systemd/system/remove-nologin.service
 RUN systemctl enable remove-nologin.service
@@ -117,6 +124,35 @@ USER root
 RUN echo "session=xfce" >> /etc/tigervnc/vncserver-config-mandatory
 RUN echo ":${DISPLAY}=${USER}" >> /etc/tigervnc/vncserver.users
 RUN systemctl enable vncserver@:${DISPLAY}.service
+
+
+# Configure NoVNC Server
+# ----------------------
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  pip3 install numpy; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cd /usr/local; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  git clone https://github.com/novnc/noVNC.git; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cd /usr/local/noVNC; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  git checkout tags/v${NOVNC_VERSION}; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  systemctl enable novnc@${DISPLAY}.service; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  ln -s /usr/local/noVNC/novnc_proxy /usr/bin/remove-nologin; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cp /usr/local/copy-configs/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  chmod 755 /usr/bin/remove-nologin; fi
+#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  chmod 644 /etc/systemd/system/remove-nologin.service; fi
+
+RUN if [[ -n "${NOVNC_VERSION}" ]]; then  \
+    pip3 install numpy; \
+    cd /usr/local; \
+    git clone https://github.com/novnc/noVNC.git; \
+    cd /usr/local/noVNC; \
+    git checkout tags/v${NOVNC_VERSION}; \
+    ln -s /usr/local/noVNC/novnc_proxy /usr/bin/novnc_proxy; \
+    cp /usr/local/copy-configs/etc/systemd/system/novnc.service /etc/systemd/system/novnc.service; \
+    chmod 755 /usr/local/noVNC/novnc_proxy; \
+    chmod 644 /etc/systemd/system/novnc.service; \
+    systemctl enable novnc.service; \
+    systemctl start novnc; \
+    fi
+
 
 
 # XFCE Policy Kit Fix

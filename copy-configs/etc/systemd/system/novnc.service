@@ -1,0 +1,9 @@
+[Unit]
+Description=NoVNC Server
+
+[Service]
+Type=simple
+ExecStart=/usr/local/noVNC/utils/novnc_proxy --vnc localhost:5901 --listen 80
+
+[Install]
+WantedBy=multi-user.target
