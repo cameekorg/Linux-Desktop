@@ -31,11 +31,24 @@ docker run -it --rm \
  --volume /lib/modules:/lib/modules:ro \
  --volume /etc/timezone:/etc/timezone:ro \
  --volume /etc/localtime:/etc/localtime:ro \
- -p 80:80 -p 22007:22 -p 59007:5901 \
+ -p 80:11 -p 22007:22 -p 59007:5901 \
  --name linux-desktop-8 \
  --hostname linux-desktop-8 \
 linux-desktop:8
 ```
+
+
+
+## Known Issues
+
+### Blurred Text
+
+When using scale on your host system, typically 125% or 150%, the VNC session text looks blurred.
+
+At least in browser there is a workaround - you can zoom out the page with NoVNC session:
+
+* for 125% scaling on host desktop -> set browser zoom to 80%
+* for 150% scaling on host desktop -> set browser zoom to 75%
 
 
 

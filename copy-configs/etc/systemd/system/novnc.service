@@ -3,7 +3,7 @@ Description=NoVNC Server
 
 [Service]
 Type=simple
-ExecStart=/usr/local/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 80
+ExecStart=/usr/local/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 11
 
 [Install]
 WantedBy=multi-user.target
