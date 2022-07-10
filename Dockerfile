@@ -6,11 +6,10 @@ FROM oraclelinux:8.6
 # ------------------
 ARG USER=resu
 ARG PASSWORD=drowssap
-ARG DISPLAY=1
 ARG TIMEZONE=Europe/Prague
 
 ARG NOVNC_VERSION="1.3.0"
-#ARG NOVNC_VERSION=""
+ARG WEBSOCKIFY_VERSION="0.10.0"
 
 # Environment Variables
 # ---------------------
@@ -122,37 +121,38 @@ RUN echo "${PASSWORD}" | /usr/bin/vncpasswd -f > /home/${USER}/.vnc/passwd
 RUN chmod 600 /home/${USER}/.vnc/passwd
 USER root
 RUN echo "session=xfce" >> /etc/tigervnc/vncserver-config-mandatory
-RUN echo ":${DISPLAY}=${USER}" >> /etc/tigervnc/vncserver.users
-RUN systemctl enable vncserver@:${DISPLAY}.service
+RUN echo ":1=${USER}" >> /etc/tigervnc/vncserver.users
+RUN systemctl enable vncserver@:1.service
 
 
-# Configure NoVNC Server
-# ----------------------
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  pip3 install numpy; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cd /usr/local; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  git clone https://github.com/novnc/noVNC.git; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cd /usr/local/noVNC; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  git checkout tags/v${NOVNC_VERSION}; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  systemctl enable novnc@${DISPLAY}.service; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  ln -s /usr/local/noVNC/novnc_proxy /usr/bin/remove-nologin; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  cp /usr/local/copy-configs/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  chmod 755 /usr/bin/remove-nologin; fi
-#RUN if [[ -n "${NOVNC_VERSION}" ]]; then  chmod 644 /etc/systemd/system/remove-nologin.service; fi
-
-RUN if [[ -n "${NOVNC_VERSION}" ]]; then  \
+# Install NoVNC
+# -------------
+RUN if [[ -n "${NOVNC_VERSION}" ]]; then \
+    echo "Installing NoVNC version: ${NOVNC_VERSION}"; \
     pip3 install numpy; \
-    cd /usr/local; \
-    git clone https://github.com/novnc/noVNC.git; \
-    cd /usr/local/noVNC; \
+    git clone https://github.com/novnc/noVNC.git "/usr/local/novnc-${NOVNC_VERSION}"; \
+    ln -s /usr/local/novnc-${NOVNC_VERSION} /usr/local/novnc; \
+    cd /usr/local/novnc; \
     git checkout tags/v${NOVNC_VERSION}; \
-    ln -s /usr/local/noVNC/novnc_proxy /usr/bin/novnc_proxy; \
+    ln -s /usr/local/novnc/utils/novnc_proxy /usr/bin/novnc_proxy; \
     cp /usr/local/copy-configs/etc/systemd/system/novnc.service /etc/systemd/system/novnc.service; \
-    chmod 755 /usr/local/noVNC/novnc_proxy; \
+    chmod 755 /usr/local/novnc/utils/novnc_proxy; \
     chmod 644 /etc/systemd/system/novnc.service; \
+    cp /usr/local/copy-configs/usr/local/novnc/index.html /usr/local/novnc/index.html; \
     systemctl enable novnc.service; \
-    systemctl start novnc; \
     fi
 
+
+# Install Websockify
+# ------------------
+RUN if [[ -n "${WEBSOCKIFY_VERSION}" ]]; then \
+    echo "Installing Websockify version: ${WEBSOCKIFY_VERSION}"; \
+    git clone https://github.com/novnc/websockify.git "/usr/local/websockify-${WEBSOCKIFY_VERSION}"; \
+    ln -s /usr/local/websockify-${WEBSOCKIFY_VERSION} /usr/local/websockify; \
+    cd /usr/local/websockify; \
+    git checkout tags/v${WEBSOCKIFY_VERSION}; \
+    ln -s /usr/local/websockify-${WEBSOCKIFY_VERSION} /usr/local/novnc/websockify; \
+    fi
 
 
 # XFCE Policy Kit Fix
@@ -183,6 +183,7 @@ RUN systemctl mask systemd-localed.service
 
 # Expose Ports
 # ------------
+EXPOSE 80
 EXPOSE 22
 EXPOSE 5901
 
