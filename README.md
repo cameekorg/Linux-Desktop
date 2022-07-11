@@ -4,7 +4,7 @@ Another Linux Desktop
 ```mermaid
 flowchart LR
   OS[Oracle Linux 8.6]-..-
-  SVC[SystemD]-..-
+  SVC[Supervisor]-..-
   UI[XFCE4]-..-
   VNC[TigerVNC]-..-
   HTTP[NoVNC]
@@ -34,7 +34,7 @@ docker run -it --rm \
  -p 80:11 -p 22007:22 -p 59007:5901 \
  --name linux-desktop-8 \
  --hostname linux-desktop-8 \
-linux-desktop:8
+ linux-desktop:8
 ```
 
 
@@ -74,4 +74,16 @@ pid=$!
 sleep 20
 kill ${pid}
 ```
+
+
+
+https://github.com/kasmtech/workspaces-core-images
+
+
+
+https://github.com/kasmtech/workspaces-images
+
+
+
+https://www.digitalocean.com/community/tutorials/how-to-remotely-access-gui-applications-using-docker-and-caddy-on-debian-9
 
