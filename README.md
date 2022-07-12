@@ -47,10 +47,11 @@ When using scale on your host system, typically 125% or 150%, the VNC session te
 
 At least in browser there is a workaround - you can zoom out the page with NoVNC session:
 
-* for 125% scaling on host desktop -> set browser zoom to 80%
-* for 150% scaling on host desktop -> set browser zoom to 75%
+* for 125% scaling on host desktop -> set browser zoom to 80% + set in the container display DPI from 96 to 128
 
+* for 150% scaling on host desktop -> set browser zoom to 75% + set in the container display DPI from 96 to 128
 
+  
 
 ## TimeZone Issues Explained
 
