@@ -132,7 +132,7 @@ RUN if [[ -n "${WEBSOCKIFY_VERSION}" ]]; then \
     ln -s /usr/local/websockify-${WEBSOCKIFY_VERSION} /usr/local/websockify; \
     cd /usr/local/websockify; \
     git checkout tags/v${WEBSOCKIFY_VERSION}; \
-    ln -s /usr/local/websockify-${WEBSOCKIFY_VERSION} /usr/local/novnc/websockify; \
+    ln -s /usr/local/websockify-${WEBSOCKIFY_VERSION} /usr/local/novnc/utils/websockify; \
     fi
 
 

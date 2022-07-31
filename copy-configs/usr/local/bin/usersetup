@@ -1,0 +1,123 @@
+#!/bin/bash
+
+usage() {
+    if [ "$*" ]; then
+        echo "$*"
+        echo
+    fi
+    echo "Usage: ${NAME} [--listen PORT] [--vnc VNC_HOST:PORT] [--cert CERT] [--ssl-only]"
+    echo
+    echo "Starts the WebSockets proxy and a mini-webserver and "
+    echo "provides a cut-and-paste URL to go to."
+    echo
+    echo "    --listen PORT         Port for proxy/webserver to listen on"
+    echo "                          Default: 6080"
+    echo "    --vnc VNC_HOST:PORT   VNC server host:port proxy target"
+    echo "                          Default: localhost:5900"
+    echo "    --cert CERT           Path to combined cert/key file, or just"
+    echo "                          the cert file if used with --key"
+    echo "                          Default: self.pem"
+    echo "    --key KEY             Path to key file, when not combined with cert"
+    echo "    --web WEB             Path to web files (e.g. vnc.html)"
+    echo "                          Default: ./"
+    echo "    --ssl-only            Disable non-https connections."
+    echo "                                    "
+    echo "    --record FILE         Record traffic to FILE.session.js"
+    echo "                                    "
+    echo "    --syslog SERVER       Can be local socket such as /dev/log, or a UDP host:port pair."
+    echo "                                    "
+    echo "    --heartbeat SEC       send a ping to the client every SEC seconds"
+    echo "    --timeout SEC         after SEC seconds exit when not connected"
+    echo "    --idle-timeout SEC    server exits after SEC seconds if there are no"
+    echo "                          active connections"
+    echo "                                    "
+    exit 2
+}
+
+NAME="$(basename $0)"
+REAL_NAME="$(readlink -f $0)"
+HERE="$(cd "$(dirname "$REAL_NAME")" && pwd)"
+PORT="6080"
+VNC_DEST="localhost:5900"
+CERT=""
+KEY=""
+WEB=""
+proxy_pid=""
+SSLONLY=""
+RECORD_ARG=""
+SYSLOG_ARG=""
+HEARTBEAT_ARG=""
+IDLETIMEOUT_ARG=""
+TIMEOUT_ARG=""
+
+UID_ARG=""
+USER_ARG=""
+PASS_ARG=""
+VNC_PASS_ARG=""
+
+
+die() {
+    echo "$*"
+    exit 1
+}
+
+while [ "$*" ]; do
+    param=$1; shift; OPTARG=$1
+    case $param in
+    --listen)  PORT="${OPTARG}"; shift            ;;
+    --vnc)     VNC_DEST="${OPTARG}"; shift        ;;
+    --cert)    CERT="${OPTARG}"; shift            ;;
+    --key)     KEY="${OPTARG}"; shift             ;;
+    --web)     WEB="${OPTARG}"; shift            ;;
+    --ssl-only) SSLONLY="--ssl-only"             ;;
+    --record) RECORD_ARG="--record ${OPTARG}"; shift ;;
+    --syslog) SYSLOG_ARG="--syslog ${OPTARG}"; shift ;;
+    --heartbeat) HEARTBEAT_ARG="--heartbeat ${OPTARG}"; shift ;;
+    --idle-timeout) IDLETIMEOUT_ARG="--idle-timeout ${OPTARG}"; shift ;;
+    --timeout) TIMEOUT_ARG="--timeout ${OPTARG}"; shift ;;
+    -h|--help) usage                              ;;
+    -*) usage "Unknown chrooter option: ${param}" ;;
+    *) break                                      ;;
+    esac
+done
+
+
+# Get User ID
+if [ -z "${UID_ARG}" ]; then
+    read -p "UID: " UID_ARG
+    while ! [[ "$UID_ARG" =~ ^[0-9]{4}$ ]] ; do
+        echo "Wrong UID, should be in format NNNN"
+        read -p "UID: " UID_ARG
+    done
+fi
+
+# Get User Name
+if [ -z "${USER_ARG}" ]; then
+    read -p "User Name: " USER_ARG
+    while ! [[ "$USER_ARG" =~ ^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\$)$ ]] ; do
+        echo "Invalid User Name string, should not contain special chars and has max 31 chars"
+        read -p "User Name: " USER_ARG
+    done
+fi
+
+# Get Password
+if [ -z "${PASS_ARG}" ]; then
+    read -s -p "Password: " PASS_ARG
+    echo
+    while [[ ${#PASS_ARG} -ge 128 ]] ; do
+        echo "Wrong Password, should not be larger than 128 chars"
+        read -s -p "Password: " PASS_ARG
+        echo
+    done
+fi
+
+# Get VNC Password
+if [ -z "${VNCPASS_ARG}" ]; then
+    read -s -p "VNC Password: " VNCPASS_ARG
+    echo
+    while [[ ${#VNCPASS_ARG} -ge 8 ]] ; do
+        echo "Wrong VNC Password, should not be larger than 8 chars"
+        read -s -p "VNC Password: " VNCPASS_ARG
+        echo
+    done
+fi
