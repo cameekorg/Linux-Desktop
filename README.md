@@ -18,7 +18,26 @@ docker build --tag linux-desktop:8 .
 
 
 
-### BCI-4 : Run Docker Image
+### BCI-4 : Run Docker Image 
+
+```sh
+docker run -it \
+ --shm-size 512m \
+ --cap-add=SYS_PTRACE \
+ --tmpfs /tmp \
+ --tmpfs /run \
+ --tmpfs /run/lock \
+ --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
+ --volume /lib/modules:/lib/modules:ro \
+ --volume /etc/timezone:/etc/timezone:ro \
+ --volume /etc/localtime:/etc/localtime:ro \
+ -p 80:11 -p 22007:22 -p 59007:5901 \
+ --name linux-desktop-8 \
+ --hostname linux-desktop-8 \
+ linux-desktop:8
+```
+
+### BCI-5 : Run Docker Image - Test Mode
 
 ```sh
 docker run -it --rm \

@@ -5,91 +5,85 @@ usage() {
         echo "$*"
         echo
     fi
-    echo "Usage: ${NAME} [--listen PORT] [--vnc VNC_HOST:PORT] [--cert CERT] [--ssl-only]"
+    echo "Usage: ${NAME} [--uid UID] [--user USER] [--password PASS] [--vnc-password VNCPASS]"
     echo
-    echo "Starts the WebSockets proxy and a mini-webserver and "
-    echo "provides a cut-and-paste URL to go to."
+    echo "Configure new user as a first-time action."    
     echo
-    echo "    --listen PORT         Port for proxy/webserver to listen on"
-    echo "                          Default: 6080"
-    echo "    --vnc VNC_HOST:PORT   VNC server host:port proxy target"
-    echo "                          Default: localhost:5900"
-    echo "    --cert CERT           Path to combined cert/key file, or just"
-    echo "                          the cert file if used with --key"
-    echo "                          Default: self.pem"
-    echo "    --key KEY             Path to key file, when not combined with cert"
-    echo "    --web WEB             Path to web files (e.g. vnc.html)"
-    echo "                          Default: ./"
-    echo "    --ssl-only            Disable non-https connections."
-    echo "                                    "
-    echo "    --record FILE         Record traffic to FILE.session.js"
-    echo "                                    "
-    echo "    --syslog SERVER       Can be local socket such as /dev/log, or a UDP host:port pair."
-    echo "                                    "
-    echo "    --heartbeat SEC       send a ping to the client every SEC seconds"
-    echo "    --timeout SEC         after SEC seconds exit when not connected"
-    echo "    --idle-timeout SEC    server exits after SEC seconds if there are no"
-    echo "                          active connections"
+    echo "    --uid UID              Old user ID, usually 1000"
+    echo "    --user USER            New user name to be set"
+    echo "    --password PASS        New password to be set"
+    echo "    --vnc-password VNCPASS New VNC password to be set, max 8 chars"
+    echo "                           (VNC doesn't allow more than 8 chars)"
     echo "                                    "
     exit 2
 }
 
-NAME="$(basename $0)"
-REAL_NAME="$(readlink -f $0)"
-HERE="$(cd "$(dirname "$REAL_NAME")" && pwd)"
-PORT="6080"
-VNC_DEST="localhost:5900"
-CERT=""
-KEY=""
-WEB=""
-proxy_pid=""
-SSLONLY=""
-RECORD_ARG=""
-SYSLOG_ARG=""
-HEARTBEAT_ARG=""
-IDLETIMEOUT_ARG=""
-TIMEOUT_ARG=""
 
+die() {
+    echo
+    echo "$*"
+    echo
+    exit 1
+}
+
+
+skip() {
+    echo
+    echo "User setup skipped!"
+    echo
+    exit 0
+}
+
+
+# Default Arguments Values
+SKIP_ARG=""
 UID_ARG=""
 USER_ARG=""
 PASS_ARG=""
 VNC_PASS_ARG=""
 
 
-die() {
-    echo "$*"
-    exit 1
-}
-
+# Parse Arguments
 while [ "$*" ]; do
     param=$1; shift; OPTARG=$1
     case $param in
-    --listen)  PORT="${OPTARG}"; shift            ;;
-    --vnc)     VNC_DEST="${OPTARG}"; shift        ;;
-    --cert)    CERT="${OPTARG}"; shift            ;;
-    --key)     KEY="${OPTARG}"; shift             ;;
-    --web)     WEB="${OPTARG}"; shift            ;;
-    --ssl-only) SSLONLY="--ssl-only"             ;;
-    --record) RECORD_ARG="--record ${OPTARG}"; shift ;;
-    --syslog) SYSLOG_ARG="--syslog ${OPTARG}"; shift ;;
-    --heartbeat) HEARTBEAT_ARG="--heartbeat ${OPTARG}"; shift ;;
-    --idle-timeout) IDLETIMEOUT_ARG="--idle-timeout ${OPTARG}"; shift ;;
-    --timeout) TIMEOUT_ARG="--timeout ${OPTARG}"; shift ;;
-    -h|--help) usage                              ;;
-    -*) usage "Unknown chrooter option: ${param}" ;;
-    *) break                                      ;;
+    --uid)           UID_ARG="${OPTARG}"; shift        ;;
+    --user)          USER_ARG="${OPTARG}"; shift       ;;
+    --password)      PASS_ARG="${OPTARG}"; shift       ;;
+    --vnc-password)  VNC_PASS_ARG="${OPTARG}"; shift   ;;
+    --skip)          SKIP_ARG="${OPTARG}"; shift       ;;
+    -h|--help) usage                                   ;;
+    -*) usage "Unknown chrooter option: ${param}"      ;;
+    *) break                                           ;;
     esac
 done
 
 
+# Print Title
+echo
+echo "Configuring new user as a first-time action (recommended)"
+echo
+
+
+# Get Skip Flag
+if [ -z "${SKIP_ARG}" ]; then
+    read -p "To skip this setup type [Y or y]: " SKIP_ARG
+fi
+
+
+# Skip process if user really wants
+if [[ "$SKIP_ARG" =~ ^[yY]$ ]]; then skip; fi
+
+
 # Get User ID
 if [ -z "${UID_ARG}" ]; then
-    read -p "UID: " UID_ARG
+    read -p "Enter UID: " UID_ARG
     while ! [[ "$UID_ARG" =~ ^[0-9]{4}$ ]] ; do
         echo "Wrong UID, should be in format NNNN"
-        read -p "UID: " UID_ARG
+        read -p "Enter UID: " UID_ARG
     done
 fi
+
 
 # Get User Name
 if [ -z "${USER_ARG}" ]; then
@@ -100,24 +94,80 @@ if [ -z "${USER_ARG}" ]; then
     done
 fi
 
+
 # Get Password
 if [ -z "${PASS_ARG}" ]; then
     read -s -p "Password: " PASS_ARG
     echo
-    while [[ ${#PASS_ARG} -ge 128 ]] ; do
+    while [[ ${#PASS_ARG} -gt 128 ]] ; do
         echo "Wrong Password, should not be larger than 128 chars"
         read -s -p "Password: " PASS_ARG
         echo
     done
 fi
 
+
 # Get VNC Password
 if [ -z "${VNCPASS_ARG}" ]; then
     read -s -p "VNC Password: " VNCPASS_ARG
     echo
-    while [[ ${#VNCPASS_ARG} -ge 8 ]] ; do
+    while [[ ${#VNCPASS_ARG} -gt 8 ]] ; do
         echo "Wrong VNC Password, should not be larger than 8 chars"
         read -s -p "VNC Password: " VNCPASS_ARG
         echo
     done
 fi
+
+
+# Find Original User Name
+USEROLD=$(id -nu ${UID_ARG})
+
+
+# Rename User
+usermod -l ${USER_ARG} ${USEROLD}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename user from default user (usermod failed)"; fi
+
+
+# Rename User Group
+groupmod -n ${USER_ARG} ${USEROLD}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename user group from default user group (groupmod failed)"; fi
+
+
+# Rename VNC User
+sed -i "s/:1=${USEROLD}/:1=${USER_ARG}/g" /etc/tigervnc/vncserver.users
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename VNC user (sed failed)"; fi
+
+
+# Change User Home Directory
+mkdir -p /data/$(hostname)
+
+ln -s /data/$(hostname) /home/${USER_ARG}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (symlink failed)"; fi
+
+cp -R -n /home/${USEROLD}/. /home/${USER_ARG}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (recursive copy failed)"; fi
+
+chown -R ${USER_ARG}:${USER_ARG} /data/$(hostname)
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (chown failed)"; fi
+
+usermod -d /home/${USER_ARG} ${USER_ARG}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (usermod failed)"; fi
+
+rm -R -f /home/${USEROLD}
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot cleanup default home directory (rm failed)"; fi
+
+
+# Change Password
+echo "${USER_ARG}:${PASS_ARG}" | chpasswd
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user password (chpasswd failed)"; fi
+
+
+# Change VNC Password
+echo "${VNCPASS_ARG}" | /usr/bin/vncpasswd -f > /home/${USER_ARG}/.vnc/passwd
+STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change VNC password (vncpasswd failed)"; fi
+
+
+# Success
+echo
+echo "User successfully configured."
+echo

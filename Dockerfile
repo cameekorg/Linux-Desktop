@@ -18,9 +18,21 @@ ARG GOSU_VERSION="1.14"
 ENV LC_ALL C.UTF-8
 
 
-# Copy Configurations
-# -------------------
+# Copy Configurations & Scripts
+# -----------------------------
 COPY copy-configs /usr/local/copy-configs
+
+
+# Init Script
+# -----------
+RUN cp /usr/local/copy-configs/usr/local/bin/init /usr/local/bin/init 
+RUN chmod 755 /usr/local/bin/init
+
+
+# One-time User Setup
+# -------------------
+RUN cp /usr/local/copy-configs/usr/local/bin/usersetup /usr/local/bin/usersetup 
+RUN chmod 755 /usr/local/bin/usersetup
 
 
 # Remove Nologin Service Fix
@@ -43,47 +55,49 @@ RUN dnf install -y epel-release
 
 # Install Packages - Tools
 # ------------------------
-RUN dnf install -y bzip2
-RUN dnf install -y ca-certificates
-RUN dnf install -y cabextract
-RUN dnf install -y fontconfig
-RUN dnf install -y git
-RUN dnf install -y glibc-langpack-en
-RUN dnf install -y gzip
-RUN dnf install -y hostname
-RUN dnf install -y htop
-RUN dnf install -y mc
-RUN dnf install -y netcat
-RUN dnf install -y net-tools
-RUN dnf install -y openssh-server
-RUN dnf install -y openssh-clients
-RUN dnf install -y passwd
-RUN dnf install -y rsync
-RUN dnf install -y sudo
-RUN dnf install -y supervisor
-RUN dnf install -y tar
-RUN dnf install -y tcpdump
-RUN dnf install -y telnet
-RUN dnf install -y tree
-RUN dnf install -y unzip
-RUN dnf install -y wget
-RUN dnf install -y xdg-utils
-RUN dnf install -y xz
-RUN dnf install -y xorg-x11-font-utils
-RUN dnf install -y zip
+RUN dnf update -y && dnf install -y \
+    bzip2 \
+    ca-certificates \
+    cabextract \
+    fontconfig \
+    git \
+    glibc-langpack-en \
+    gzip \
+    hostname \
+    htop \
+    mc \
+    netcat \
+    net-tools \
+    openssh-server \
+    openssh-clients \
+    passwd \
+    rsync \
+    sudo \
+    supervisor \
+    tar \
+    tcpdump \
+    telnet \
+    tree \
+    unzip \
+    wget \
+    xdg-utils \
+    xz \
+    xorg-x11-font-utils \
+    zip
 
 
 # Install Packages - XFCE Desktop
 # -------------------------------
 RUN dnf group install -y "Xfce"
-RUN dnf install -y gnu-free-fonts-common
-RUN dnf install -y gnu-free-mono-fonts
-RUN dnf install -y gnu-free-sans-fonts
-RUN dnf install -y gnu-free-serif-fonts
-RUN dnf install -y tigervnc-server
+RUN dnf update -y && dnf install -y \
+    gnu-free-fonts-common \
+    gnu-free-mono-fonts \
+    gnu-free-sans-fonts \
+    gnu-free-serif-fonts \
+    tigervnc-server
 RUN dnf remove -y xfce4-power-manager
 RUN dnf remove -y xfce4-screensaver
-RUN systemctl set-default graphical.target
+##RUN systemctl set-default graphical.target
 
 
 # Add User to System
@@ -173,6 +187,7 @@ RUN chmod 755 /usr/libexec/vncsession-restore
 RUN chmod 755 /usr/libexec/vncsession-start
 RUN chmod 755 /usr/local/novnc/utils/novnc_proxy
 
+
 # Volumes
 # ------------
 
@@ -186,6 +201,6 @@ EXPOSE 5901
 
 # Command on Start
 # ----------------
-CMD [ "sh", "-c", "exec supervisord -c /etc/supervisord/supervisord.conf" ]
+CMD [ "sh", "-c", "/usr/local/bin/init && exec supervisord -c /etc/supervisord/supervisord.conf" ]
 ###CMD [ "sh", "-c", "exec gosu 1000 supervisord -c /etc/supervisord/supervisord.conf" ]
 ###CMD [ "/usr/sbin/init" ]
