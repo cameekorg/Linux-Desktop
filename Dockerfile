@@ -1,7 +1,6 @@
 FROM oraclelinux:8.6
 LABEL description="Base Linux Desktop image which is supposed to be inherited and customized"
 
-# Docker Run
 
 # External Arguments
 # ------------------
@@ -13,6 +12,9 @@ ARG NOVNC_VERSION="1.3.0"
 ARG WEBSOCKIFY_VERSION="0.10.0"
 ARG GOSU_VERSION="1.14"
 
+ARG DEPLOY_DIR=/usr/local/deploy
+
+
 # Environment Variables
 # ---------------------
 # Ref: https://github.com/snapcore/snapcraft/blob/master/Dockerfile
@@ -21,18 +23,25 @@ ENV LC_ALL C.UTF-8
 
 # Copy Configurations & Scripts
 # -----------------------------
-COPY deploy /usr/local/deploy
+COPY deploy ${DEPLOY_DIR}
+
+
+# Change Timezone
+# ---------------
+# Ref: https://ma.ttias.be/changing-the-time-and-timezone-settings-on-centos-or-rhel/
+RUN mv -f /etc/localtime /etc/localtime.backup
+RUN ln -s /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 
 
 # Init Script
 # -----------
-RUN cp /usr/local/deploy/usr/local/bin/init /usr/local/bin/init 
+RUN cp ${DEPLOY_DIR}/usr/local/bin/init /usr/local/bin/init 
 RUN chmod 755 /usr/local/bin/init
 
 
 # One-time User Setup
 # -------------------
-RUN cp /usr/local/deploy/usr/local/bin/usersetup /usr/local/bin/usersetup 
+RUN cp ${DEPLOY_DIR}/usr/local/bin/usersetup /usr/local/bin/usersetup 
 RUN chmod 755 /usr/local/bin/usersetup
 
 
@@ -40,11 +49,8 @@ RUN chmod 755 /usr/local/bin/usersetup
 # --------------------------
 # Handle issues with Nologin after boot.
 # Ref: https://unix.stackexchange.com/questions/487742/system-is-booting-up-unprivileged-users-are-not-permitted-to-log-in-yet
-RUN cp /usr/local/deploy/usr/bin/remove-nologin /usr/bin/remove-nologin
-#RUN cp /usr/local/deploy/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service
-#RUN chmod 755 /usr/bin/remove-nologin
-#RUN chmod 644 /etc/systemd/system/remove-nologin.service
-#RUN systemctl enable remove-nologin.service
+RUN cp ${DEPLOY_DIR}/usr/local/bin/remove-nologin /usr/local/bin/remove-nologin
+RUN chmod 755 /usr/local/bin/remove-nologin
 
 
 # Install Packages - Init
@@ -98,7 +104,27 @@ RUN dnf update -y && dnf install -y \
     tigervnc-server
 RUN dnf remove -y xfce4-power-manager
 RUN dnf remove -y xfce4-screensaver
-##RUN systemctl set-default graphical.target
+
+
+# XFCE Policy Kit Fix
+# -------------------
+# After every login there is Polkit tool displayed requiring login, moreover with some services disabled bellow, it crashes. Therefore it's disabled.
+RUN echo "Hidden=true" >> /etc/xdg/autostart/xfce-polkit.desktop
+
+
+# Copy Custom Backgrounds
+# -----------------------
+RUN cp -r ${DEPLOY_DIR}/usr/share/backgrounds/. /usr/share/backgrounds
+
+
+# Copy Custom Themes
+# ------------------
+RUN cp -r ${DEPLOY_DIR}/usr/share/themes/. /usr/share/themes
+
+
+# Copy Custom User Settings
+# -------------------------
+RUN cp -r ${DEPLOY_DIR}/etc/skel/. /etc/skel
 
 
 # Add User to System
@@ -118,7 +144,9 @@ RUN chmod 600 /home/${USER}/.vnc/passwd
 USER root
 RUN echo "session=xfce" >> /etc/tigervnc/vncserver-config-mandatory
 RUN echo ":1=${USER}" >> /etc/tigervnc/vncserver.users
-RUN systemctl enable vncserver@:1.service
+###RUN systemctl enable vncserver@:1.service
+RUN chmod 755 /usr/libexec/vncsession-restore
+RUN chmod 755 /usr/libexec/vncsession-start
 
 
 # Install NoVNC
@@ -131,11 +159,8 @@ RUN if [[ -n "${NOVNC_VERSION}" ]]; then \
     cd /usr/local/novnc; \
     git checkout tags/v${NOVNC_VERSION}; \
     ln -s /usr/local/novnc/utils/novnc_proxy /usr/bin/novnc_proxy; \
-    cp /usr/local/deploy/etc/systemd/system/novnc.service /etc/systemd/system/novnc.service; \
     chmod 755 /usr/local/novnc/utils/novnc_proxy; \
-    chmod 644 /etc/systemd/system/novnc.service; \
-    cp /usr/local/deploy/usr/local/novnc/index.html /usr/local/novnc/index.html; \
-    systemctl enable novnc.service; \
+    cp ${DEPLOY_DIR}/usr/local/novnc/index.html /usr/local/novnc/index.html; \
     fi
 
 
@@ -151,42 +176,26 @@ RUN if [[ -n "${WEBSOCKIFY_VERSION}" ]]; then \
     fi
 
 
-# XFCE Policy Kit Fix
-# -------------------
-# After every login there is Polkit tool displayed requiring login, moreover with some services disabled bellow, it crashes. Therefore it's disabled.
-RUN echo "Hidden=true" >> /etc/xdg/autostart/xfce-polkit.desktop
-
 # Install Gosu
 # ------------
 # Sudo Alternative for Docker: simple tool grown out of the simple fact that su and sudo
 # have very strange and often annoying TTY and signal-forwarding behavior.
 RUN if [[ -n "${GOSU_VERSION}" ]]; then \
-    gpg --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 && \
-    curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.14/gosu-amd64" && \
-    curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/1.14/gosu-amd64.asc" && \
-    gpg --verify /usr/local/bin/gosu.asc && \
-    rm -f /usr/local/bin/gosu.asc && \
-    rm -rf /root/.gnupg/ && \
-    chmod +x /usr/local/bin/gosu && \
-    gosu nobody true; \
+		gpg --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 && \
+		curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.14/gosu-amd64" && \
+		curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/1.14/gosu-amd64.asc" && \
+		gpg --verify /usr/local/bin/gosu.asc && \
+		rm -f /usr/local/bin/gosu.asc && \
+		rm -rf /root/.gnupg/ && \
+		chmod +x /usr/local/bin/gosu && \
+		gosu nobody true; \
     fi
 
 
-# Copy Custom Start Script
-# ------------------------
-RUN cp /usr/local/deploy/usr/bin/start.sh /usr/bin/start.sh
-RUN chmod 755 /usr/bin/start.sh
-
-# Copy Custom Start Script
+# Copy Supervisord Script
 # ------------------------
 RUN mkdir /etc/supervisord
-RUN cp /usr/local/deploy/etc/supervisord/supervisord.conf /etc/supervisord/supervisord.conf
-
-
-RUN chmod 755 /usr/bin/remove-nologin
-RUN chmod 755 /usr/libexec/vncsession-restore
-RUN chmod 755 /usr/libexec/vncsession-start
-RUN chmod 755 /usr/local/novnc/utils/novnc_proxy
+RUN cp ${DEPLOY_DIR}/etc/supervisord/supervisord.conf /etc/supervisord/supervisord.conf
 
 
 # Volumes
@@ -203,5 +212,3 @@ EXPOSE 5901
 # Command on Start
 # ----------------
 CMD [ "sh", "-c", "/usr/local/bin/init && exec supervisord -c /etc/supervisord/supervisord.conf" ]
-###CMD [ "sh", "-c", "exec gosu 1000 supervisord -c /etc/supervisord/supervisord.conf" ]
-###CMD [ "/usr/sbin/init" ]
