@@ -6,7 +6,7 @@ LABEL description="Base Linux Desktop image which is supposed to be inherited an
 # ------------------
 ARG USER=resu
 ARG PASSWORD=drowssap
-ARG TIMEZONE=Europe/Prague
+ARG TIMEZONE=Europe/Paris
 
 ARG NOVNC_VERSION="1.3.0"
 ARG WEBSOCKIFY_VERSION="0.10.0"
@@ -36,7 +36,7 @@ RUN ln -s /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 # Init Script
 # -----------
 RUN cp ${DEPLOY_DIR}/usr/local/bin/init /usr/local/bin/init 
-RUN chmod 755 /usr/local/bin/init
+RUN chmod 500 /usr/local/bin/init
 
 
 # One-time User Setup
@@ -78,6 +78,7 @@ RUN dnf update -y && dnf install -y \
     openssh-server \
     openssh-clients \
     passwd \
+    redhat-lsb \
     rsync \
     sudo \
     supervisor \
@@ -126,6 +127,11 @@ RUN cp -r ${DEPLOY_DIR}/usr/share/themes/. /usr/share/themes
 # -------------------------
 RUN cp -r ${DEPLOY_DIR}/etc/skel/. /etc/skel
 
+# Copy Root User Settings
+# -------------------------
+RUN cp -r ${DEPLOY_DIR}/root/.bashrc /root/.bashrc
+RUN chmod 600 /root/.bashrc
+
 
 # Add User to System
 # ------------------
@@ -144,7 +150,6 @@ RUN chmod 600 /home/${USER}/.vnc/passwd
 USER root
 RUN echo "session=xfce" >> /etc/tigervnc/vncserver-config-mandatory
 RUN echo ":1=${USER}" >> /etc/tigervnc/vncserver.users
-###RUN systemctl enable vncserver@:1.service
 RUN chmod 755 /usr/libexec/vncsession-restore
 RUN chmod 755 /usr/libexec/vncsession-start
 

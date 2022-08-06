@@ -1,8 +1,16 @@
 #!/bin/bash
 
+echo "Welcome to Linux Desktop!"
+echo "========================="
+cat /etc/os-release | grep -e "^NAME[=].*"
+cat /etc/os-release | grep -e "^VERSION[=].*"
+echo  
+
 USERSETUP=/usr/local/bin/usersetup
 if [ -f "$USERSETUP" ];
 then
     $USERSETUP --uid 1000
     rm -f $USERSETUP
 fi
+
+
