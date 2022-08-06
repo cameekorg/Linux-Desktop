@@ -1,0 +1,8 @@
+#!/bin/bash
+
+USERSETUP=/usr/local/bin/usersetup
+if [ -f "$USERSETUP" ];
+then
+    $USERSETUP --uid 1000
+    rm -f $USERSETUP
+fi

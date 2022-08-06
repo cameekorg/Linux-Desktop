@@ -1,4 +1,5 @@
 FROM oraclelinux:8.6
+LABEL description="Base Linux Desktop image which is supposed to be inherited and customized"
 
 # Docker Run
 
@@ -20,18 +21,18 @@ ENV LC_ALL C.UTF-8
 
 # Copy Configurations & Scripts
 # -----------------------------
-COPY copy-configs /usr/local/copy-configs
+COPY deploy /usr/local/deploy
 
 
 # Init Script
 # -----------
-RUN cp /usr/local/copy-configs/usr/local/bin/init /usr/local/bin/init 
+RUN cp /usr/local/deploy/usr/local/bin/init /usr/local/bin/init 
 RUN chmod 755 /usr/local/bin/init
 
 
 # One-time User Setup
 # -------------------
-RUN cp /usr/local/copy-configs/usr/local/bin/usersetup /usr/local/bin/usersetup 
+RUN cp /usr/local/deploy/usr/local/bin/usersetup /usr/local/bin/usersetup 
 RUN chmod 755 /usr/local/bin/usersetup
 
 
@@ -39,8 +40,8 @@ RUN chmod 755 /usr/local/bin/usersetup
 # --------------------------
 # Handle issues with Nologin after boot.
 # Ref: https://unix.stackexchange.com/questions/487742/system-is-booting-up-unprivileged-users-are-not-permitted-to-log-in-yet
-RUN cp /usr/local/copy-configs/usr/bin/remove-nologin /usr/bin/remove-nologin
-#RUN cp /usr/local/copy-configs/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service
+RUN cp /usr/local/deploy/usr/bin/remove-nologin /usr/bin/remove-nologin
+#RUN cp /usr/local/deploy/etc/systemd/system/remove-nologin.service /etc/systemd/system/remove-nologin.service
 #RUN chmod 755 /usr/bin/remove-nologin
 #RUN chmod 644 /etc/systemd/system/remove-nologin.service
 #RUN systemctl enable remove-nologin.service
@@ -130,10 +131,10 @@ RUN if [[ -n "${NOVNC_VERSION}" ]]; then \
     cd /usr/local/novnc; \
     git checkout tags/v${NOVNC_VERSION}; \
     ln -s /usr/local/novnc/utils/novnc_proxy /usr/bin/novnc_proxy; \
-    cp /usr/local/copy-configs/etc/systemd/system/novnc.service /etc/systemd/system/novnc.service; \
+    cp /usr/local/deploy/etc/systemd/system/novnc.service /etc/systemd/system/novnc.service; \
     chmod 755 /usr/local/novnc/utils/novnc_proxy; \
     chmod 644 /etc/systemd/system/novnc.service; \
-    cp /usr/local/copy-configs/usr/local/novnc/index.html /usr/local/novnc/index.html; \
+    cp /usr/local/deploy/usr/local/novnc/index.html /usr/local/novnc/index.html; \
     systemctl enable novnc.service; \
     fi
 
@@ -173,13 +174,13 @@ RUN if [[ -n "${GOSU_VERSION}" ]]; then \
 
 # Copy Custom Start Script
 # ------------------------
-RUN cp /usr/local/copy-configs/usr/bin/start.sh /usr/bin/start.sh
+RUN cp /usr/local/deploy/usr/bin/start.sh /usr/bin/start.sh
 RUN chmod 755 /usr/bin/start.sh
 
 # Copy Custom Start Script
 # ------------------------
 RUN mkdir /etc/supervisord
-RUN cp /usr/local/copy-configs/etc/supervisord/supervisord.conf /etc/supervisord/supervisord.conf
+RUN cp /usr/local/deploy/etc/supervisord/supervisord.conf /etc/supervisord/supervisord.conf
 
 
 RUN chmod 755 /usr/bin/remove-nologin
