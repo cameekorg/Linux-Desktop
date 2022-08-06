@@ -61,13 +61,15 @@ done
 
 # Print Title
 echo
-echo "Configuring new user as a first-time action (recommended)"
+echo "Configuring new user name and password as a first-time action"
+echo "(recommended)"
 echo
 
 
 # Get Skip Flag
 if [ -z "${SKIP_ARG}" ]; then
     read -p "To skip this setup type [Y or y]: " SKIP_ARG
+    echo
 fi
 
 
@@ -108,8 +110,8 @@ fi
 
 
 # Get VNC Password
-if [ -z "${VNCPASS_ARG}" ]; then
-    read -s -p "VNC Password: " VNCPASS_ARG
+if [ -z "${VNCPASS_ARG}" ]; then    
+    read -s -p "VNC Password (max. 8 chars): " VNCPASS_ARG
     echo
     while [[ ${#VNCPASS_ARG} -gt 8 ]] ; do
         echo "Wrong VNC Password, should not be larger than 8 chars"
