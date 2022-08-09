@@ -16,6 +16,7 @@ COPY deploy /usr/local/deploy
 # Install Packages - Tools
 # ------------------------
 RUN dnf update -y && dnf install -y \
+    firefox \
     qt5pas
 
 # Install PeaZip
@@ -30,9 +31,6 @@ RUN if [[ -n "${PEAZIP_VERSION}" ]]; then \
 # ----------------------
 # Ref: https://software.opensuse.org/download.html?project=home%3Asnwh%3Amoka&package=moka-icon-theme
 RUN if [[ -n "${MOKAICON_VERSION}" ]]; then \
-		##dnf install -y https://kojipkgs.fedoraproject.org//packages/moka-icon-theme/${MOKAICON_VERSION}/${MOKAICONDIST_VERSION}/noarch/moka-icon-theme-${MOKAICON_VERSION}-${MOKAICONDIST_VERSION}.noarch.rpm ; \
-        # Ref: https://software.opensuse.org/download.html?project=home%3Asnwh%3Amoka&package=moka-icon-theme
-        #dnf install -y https://download.opensuse.org/repositories/home:/snwh:/moka/Fedora_25/noarch/moka-icon-theme-5.3.git+1475513102.0566904-8.2.noarch.rpm && \
         dnf install -y https://download.opensuse.org/repositories/home:/snwh:/moka/${MOKAICON_VERSION}.noarch.rpm && \
         gtk-update-icon-cache /usr/share/icons/Moka/ ; \
 	fi
