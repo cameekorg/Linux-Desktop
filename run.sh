@@ -10,9 +10,9 @@ docker run -it \
  --tmpfs /tmp \
  --tmpfs /run \
  --tmpfs /run/lock \
- --volume /apps/shared \
- --volume /data/box-4 \
- -p 8004:11 -p 22004:22 -p 59004:5901 \
- --name box-4 \
- --hostname box-4 \
+ --volumes-from Apps-Shared \
+ --volumes-from Data-Shared \
+ -p 8005:11 -p 22005:22 -p 59005:5901 \
+ --name box-5 \
+ --hostname box-5 \
  cameek/linux-desktop-base:0.2
