@@ -6,13 +6,9 @@ echo "----------------------"
 
 docker run -it \
  --shm-size 512m \
- --cap-add=SYS_PTRACE \
- --tmpfs /tmp \
- --tmpfs /run \
- --tmpfs /run/lock \
- --volumes-from Apps-Shared \
- --volumes-from Data-Shared \
- -p 8005:11 -p 22005:22 -p 59005:5901 \
- --name box-5 \
- --hostname box-5 \
- cameek/linux-desktop-base:0.2
+ --volumes-from shared-apps \
+ --volumes-from shared-data \
+ -p 8006:11 -p 22006:22 -p 59006:5901 \
+ --name box-6 \
+ --hostname box-6 \
+ cameek/linux-desktop-base:0.3

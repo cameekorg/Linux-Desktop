@@ -1,0 +1,60 @@
+
+### IN-PROGRESS ###
+services:
+
+  shared-apps:
+    image: oraclelinux:8.6
+    volumes:
+      - shared-apps:/shared/apps
+
+  shared-data:
+    image: oraclelinux:8.6
+    volumes:
+      - shared-data:/shared/data
+
+  box-1:
+    hostname: "box-1"
+    build: .
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    ports:
+      - "8001:11"
+      - "22001:22"
+      - "59001:5901"
+    shm_size: "512m"
+    volumes:
+      - shared-apps:/shared/apps
+      - shared-data:/shared/data
+    tmpfs:
+      - /tmp
+      - /run
+      - /run/lock
+    depends_on:
+      - shared-apps
+      - shared-data
+
+#  box-2:
+#    hostname: "box-2"
+#    build: .
+#    stdin_open: true # docker run -i
+#    tty: true        # docker run -t
+#    ports:
+#      - "8002:11"
+#      - "22002:22"
+#      - "59002:5901"
+#    shm_size: "512m"
+#    volumes:
+#      - shared-apps:/shared/apps
+#      - shared-data:/shared/data
+#    tmpfs:
+#      - /tmp
+#      - /run
+#      - /run/lock
+#    depends_on:
+#      - shared-apps
+#      - shared-data
+#      - box-1
+
+volumes:
+  shared-apps: {}
+  shared-data: {}

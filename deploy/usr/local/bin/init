@@ -5,6 +5,7 @@ echo "Welcome to Linux Desktop!"
 echo "========================="
 cat /etc/os-release | grep -e "^NAME[=].*"
 cat /etc/os-release | grep -e "^VERSION[=].*"
+echo "HOSTNAME=\"$(hostname)\""
 echo  
 
 USERSETUP=/usr/local/bin/usersetup

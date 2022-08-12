@@ -7,7 +7,7 @@ usage() {
     fi
     echo "Usage: $NAME [--local-versions DIR] [--local-links DIR] [--shared-versions DIR] [--shared-links DIR] [--skip FLG]"
     echo
-    echo "Sharing applications with other containers via shared volume"    
+    echo "Sharing applications optimization with other containers via shared volume"
     echo
     echo "    --local-versions DIR   The directory with local applications"
     echo "                           Default: /opt/versions"
@@ -16,10 +16,10 @@ usage() {
     echo "                           Default: /opt"
     echo "                           "
     echo "    --shared-versions DIR  The directory with shared applications"
-    echo "                           Default: /apps/shared/versions"
+    echo "                           Default: /shared/apps/versions"
     echo "                           "
     echo "    --shared-links DIR     The directory with shared links to apps"
-    echo "                           Default: /apps/shared"
+    echo "                           Default: /shared/apps"
     echo "                           "
     echo "    --skip FLG             Use value 1 to skip this"
     echo "                           "
@@ -37,7 +37,7 @@ die() {
 
 skip() {
     echo
-    echo "Sharing applications skipped!"
+    echo "Sharing applications optimization skipped!"
     echo
     exit 0
 }
@@ -47,8 +47,8 @@ skip() {
 SKIP_ARG=""
 LOCVERSIONS_ARG="/opt/versions"
 LOCLINKS_ARG="/opt"
-SHRVERSIONS_ARG="/apps/shared/versions"
-SHRLINKS_ARG="/apps/shared"
+SHRVERSIONS_ARG="/shared/apps/versions"
+SHRLINKS_ARG="/shared/apps"
 
 
 # Parse Arguments
@@ -69,8 +69,8 @@ done
 
 # Print Title
 echo
-echo "Sharing applications with other containers via shared volume as a first-time action"
-echo "(recommended)"
+echo "Sharing applications optimization with other containers via shared volume as a first-time action"
+echo "(recommended to reduce space)"
 echo
 
 
@@ -105,13 +105,13 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
 
                 echo "$LOCVERSIONS_ARG/${LOCVERDIR##*/}/${LOCVERSUBDIR##*/}"
 
-                # SHRVERDIR = /apps/shared/versions/jdk11
+                # SHRVERDIR = /shared/apps/versions/jdk11
                 SHRVERDIR=$SHRVERSIONS_ARG/${LOCVERDIR##*/}
 
-                # SHRVERSUBDIR = /apps/shared/versions/jdk11/jdk-11.0.16+8
+                # SHRVERSUBDIR = /shared/apps/versions/jdk11/jdk-11.0.16+8
                 SHRVERSUBDIR=$SHRVERDIR/${LOCVERSUBDIR##*/}
 
-                # SHRLINK = /apps/shared/jdk11
+                # SHRLINK = /shared/apps/jdk11
                 SHRLINK=$SHRLINKS_ARG/${LOCVERDIR##*/}
 
                 # LOCLINK = /opt/jdk11
@@ -121,13 +121,13 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
                 if [ -d "$SHRVERSUBDIR" ]; then
                     echo "Apps Share already have the directory $SHRVERSUBDIR"
 
-                    # Create Apps Share symlink /apps/shared/jdk11 -> /apps/shared/versions/jdk11/jdk-11.0.16+8
-                    if ![ -e "$SHRLINK" ]; then
+                    # Create Apps Share symlink /shared/apps/jdk11 -> /shared/apps/versions/jdk11/jdk-11.0.16+8
+                    if [ ! -e "$SHRLINK" ]; then
                         ln -sf $SHRVERSUBDIR $SHRLINK
                         STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
                     fi
 
-                    # Create local symlink /opt/jdk11 -> /apps/shared/jdk11
+                    # Create local symlink /opt/jdk11 -> /shared/apps/jdk11
                     ln -sf $SHRLINK $LOCLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
 
@@ -152,11 +152,11 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
                     # Remove extra trailing slash
                     SHRVERSUBDIR=${SHRVERSUBDIR%/}
 
-                    # Create Apps Share symlink /apps/shared/jdk11 -> /apps/shared/versions/jdk11/jdk-11.0.16+8
+                    # Create Apps Share symlink /shared/apps/jdk11 -> /shared/apps/versions/jdk11/jdk-11.0.16+8
                     ln -sf $SHRVERSUBDIR $SHRLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
 
-                    # Create local symlink /opt/jdk11 -> /apps/shared/jdk11
+                    # Create local symlink /opt/jdk11 -> /shared/apps/jdk11
                     ln -sf $SHRLINK $LOCLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
                 fi
@@ -168,5 +168,5 @@ done
 
 # Success
 echo
-echo "Sharing applications finished."
+echo "Sharing applications optimization finished."
 echo

@@ -1,5 +1,8 @@
-# Linux-Desktop
-Another Linux Desktop
+# Linux Desktop Docker
+
+Base Linux Desktop Docker image which is supposed to be inherited and customized.
+
+Consists of following components:
 
 ```mermaid
 flowchart LR
@@ -10,55 +13,68 @@ flowchart LR
   HTTP[NoVNC]
 ```
 
-### BCI-3 : Build and Tag Image
+## 1. Build and Tag Image
 
+On Linux:
 ```sh
-docker build --tag linux-desktop:8 .
+./build.sh
+```
+On Windows:
+```bat
+build.bat
+```
+Or via Docker CLI:
+```sh
+docker build --tag cameek/linux-desktop-base:0.3 .
+```
+
+## 2. Create Persistent Shared Volumes
+
+The volumes are used to:
+- keep your home data safe (/shared/data)
+- to optimize disk space by re-using applications (/shared/apps) 
+
+On Linux:
+```sh
+./volumes-create.sh
+```
+On Windows:
+```bat
+volumes-create.bat
+```
+Or via Docker CLI:
+```sh
+docker run -v shared-apps:/shared/apps --name shared-apps oraclelinux:8.6 /bin/bash
+```
+```sh
+docker run -v shared-data:/shared/data --name shared-data oraclelinux:8.6 /bin/bash
 ```
 
 
+## 3. Run Linux Desktop Image 
 
-### BCI-4 : Run Docker Image 
-
+On Linux modify and execute:
+```sh
+./run.sh
+```
+On Windows modify and execute
+```bat
+run.bat
+```
+Or via Docker CLI:
 ```sh
 docker run -it \
  --shm-size 512m \
- --cap-add=SYS_PTRACE \
- --tmpfs /tmp \
- --tmpfs /run \
- --tmpfs /run/lock \
- --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
- --volume /lib/modules:/lib/modules:ro \
- --volume /etc/timezone:/etc/timezone:ro \
- --volume /etc/localtime:/etc/localtime:ro \
- -p 80:11 -p 22007:22 -p 59007:5901 \
- --name linux-desktop-8 \
- --hostname linux-desktop-8 \
- linux-desktop:8
-```
-
-### BCI-5 : Run Docker Image - Test Mode
-
-```sh
-docker run -it --rm \
- --shm-size 512m \
- --cap-add=SYS_PTRACE \
- --tmpfs /tmp \
- --tmpfs /run \
- --tmpfs /run/lock \
- --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
- --volume /lib/modules:/lib/modules:ro \
- --volume /etc/timezone:/etc/timezone:ro \
- --volume /etc/localtime:/etc/localtime:ro \
- -p 80:11 -p 22007:22 -p 59007:5901 \
- --name linux-desktop-8 \
- --hostname linux-desktop-8 \
- linux-desktop:8
+ --volumes-from shared-apps \
+ --volumes-from shared-data \
+ -p 8005:11 -p 22005:22 -p 59005:5901 \
+ --name box-5 \
+ --hostname box-5 \
+ cameek/linux-desktop-base:0.3
 ```
 
 
-
-## Known Issues
+## 4. Known Issues
 
 ### Blurred Text
 
@@ -72,38 +88,14 @@ At least in browser there is a workaround - you can zoom out the page with NoVNC
 
   
 
-## TimeZone Issues Explained
-
-
-
-https://hoa.ro/blog/2020-12-08-draft-docker-time-timezone/
-
-
-
-## Install NoVNC 1.3.0
-
-```sh
-pip3 install numpy
-cd /usr/local
-git clone https://github.com/novnc/noVNC.git
-cd /usr/local/noVNC
-git checkout tags/v1.3.0
-cd /usr/local/noVNC/utils
-./novnc_proxy --vnc localhost:5901 &
-pid=$!
-sleep 20
-kill ${pid}
-```
-
-
+## 5. References
 
 https://github.com/kasmtech/workspaces-core-images
 
-
-
 https://github.com/kasmtech/workspaces-images
-
-
 
 https://www.digitalocean.com/community/tutorials/how-to-remotely-access-gui-applications-using-docker-and-caddy-on-debian-9
 
+https://github.com/novnc/noVNC.git
+
+https://hub.docker.com/r/linuxserver/rdesktop

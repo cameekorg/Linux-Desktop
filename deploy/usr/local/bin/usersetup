@@ -5,7 +5,7 @@ usage() {
         echo "$*"
         echo
     fi
-    echo "Usage: $NAME [--uid UID] [--user USER] [--password PASS] [--vnc-password VNCPASS]"
+    echo "Usage: $NAME [--uid UID] [--user USER] [--password PASS] [--vnc-password VNCPASS] [--shared-data DIR] [--skip FLG]"
     echo
     echo "Configure new user as a first-time action."    
     echo
@@ -14,6 +14,8 @@ usage() {
     echo "    --password PASS        New password to be set"
     echo "    --vnc-password VNCPASS New VNC password to be set, max 8 chars"
     echo "                           (VNC doesn't allow more than 8 chars)"
+    echo "    --shared-data DIR      Directory with persistent shared data"
+    echo "                           (default: /shared/data)"
     echo "    --skip FLG             Use value 1 to skip this"
     echo "                                    "
     exit 2
@@ -42,20 +44,22 @@ UID_ARG=""
 USER_ARG=""
 PASS_ARG=""
 VNC_PASS_ARG=""
+SHRDATA_ARG="/shared/data"
 
 
 # Parse Arguments
 while [ "$*" ]; do
     param=$1; shift; OPTARG=$1
     case $param in
-    --uid)           UID_ARG="$OPTARG"; shift        ;;
-    --user)          USER_ARG="$OPTARG"; shift       ;;
-    --password)      PASS_ARG="$OPTARG"; shift       ;;
-    --vnc-password)  VNC_PASS_ARG="$OPTARG"; shift   ;;
-    --skip)          SKIP_ARG="$OPTARG"; shift       ;;
-    -h|--help) usage                                   ;;
-    -*) usage "Unknown option: $param"               ;;
-    *) break                                           ;;
+    --uid )           UID_ARG="$OPTARG"; shift        ;;
+    --user )          USER_ARG="$OPTARG"; shift       ;;
+    --password )      PASS_ARG="$OPTARG"; shift       ;;
+    --vnc-password )  VNC_PASS_ARG="$OPTARG"; shift   ;;
+    --shared-data )   VNC_PASS_ARG="$OPTARG"; shift   ;;
+    --skip )          SKIP_ARG="$OPTARG"; shift       ;;
+    -h|--help) usage                                  ;;
+    -*) usage "Unknown option: $param"                ;;
+    *) break                                          ;;
     esac
 done
 
@@ -63,7 +67,7 @@ done
 # Print Title
 echo
 echo "Configuring new user name and password as a first-time action"
-echo "(recommended)"
+echo "(recommended for security)"
 echo
 
 
@@ -107,6 +111,15 @@ if [ -z "$PASS_ARG" ]; then
         read -s -p "Password: " PASS_ARG
         echo
     done
+
+    # Confirm Password
+    read -s -p "Password Confirm: " PASS_CONFIRM
+    echo
+    while [[ $PASS_ARG != $PASS_CONFIRM ]] ; do
+        echo "Wrong Password Confirm, both values must be same"
+        read -s -p "Password Confirm: " PASS_CONFIRM
+        echo
+    done
 fi
 
 
@@ -117,6 +130,15 @@ if [ -z "$VNCPASS_ARG" ]; then
     while [[ ${#VNCPASS_ARG} -gt 8 ]] ; do
         echo "Wrong VNC Password, should not be larger than 8 chars"
         read -s -p "VNC Password: " VNCPASS_ARG
+        echo
+    done
+
+    # Confirm VNC Password
+    read -s -p "VNC Password Confirm: " VNCPASS_CONFIRM
+    echo
+    while [[ $VNCPASS_ARG != $VNCPASS_CONFIRM ]] ; do
+        echo "Wrong VNC Password Confirm, both values must be same"
+        read -s -p "VNC Password Confirm: " VNCPASS_CONFIRM
         echo
     done
 fi
@@ -142,15 +164,15 @@ STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename VNC user (sed failed)";
 
 
 # Change User Home Directory
-mkdir -p /data/$(hostname)
+mkdir -p $SHRDATA_ARG/$(hostname)
 
-ln -s /data/$(hostname) /home/$USER_ARG
+ln -s $SHRDATA_ARG/$(hostname) /home/$USER_ARG
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (symlink failed)"; fi
 
 cp -R -n /home/$USEROLD/. /home/$USER_ARG
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (recursive copy failed)"; fi
 
-chown -R $USER_ARG:$USER_ARG /data/$(hostname)
+chown -R $USER_ARG:$USER_ARG $SHRDATA_ARG/$(hostname)
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (chown failed)"; fi
 
 usermod -d /home/$USER_ARG $USER_ARG
