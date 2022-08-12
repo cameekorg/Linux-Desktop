@@ -1,9 +1,0 @@
-[Unit]
-Description=Remove Nologin Blocker
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/remove-nologin
-
-[Install]
-WantedBy=multi-user.target

@@ -1,3 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-docker build --tag cameek/linux-desktop-base:0.1 .
+echo "Build Linux Desktop Base"
+echo "------------------------"
+
+docker build --tag cameek/linux-desktop-base:0.2 .

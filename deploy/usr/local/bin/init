@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo
 echo "Welcome to Linux Desktop!"
 echo "========================="
 cat /etc/os-release | grep -e "^NAME[=].*"
@@ -13,4 +14,10 @@ then
     rm -f $USERSETUP
 fi
 
+APPSSHARE=/usr/local/bin/appsshare
+if [ -f "$APPSSHARE" ];
+then
+    $APPSSHARE
+    rm -f $APPSSHARE
+fi
 

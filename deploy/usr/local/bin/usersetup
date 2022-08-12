@@ -5,7 +5,7 @@ usage() {
         echo "$*"
         echo
     fi
-    echo "Usage: ${NAME} [--uid UID] [--user USER] [--password PASS] [--vnc-password VNCPASS]"
+    echo "Usage: $NAME [--uid UID] [--user USER] [--password PASS] [--vnc-password VNCPASS]"
     echo
     echo "Configure new user as a first-time action."    
     echo
@@ -14,6 +14,7 @@ usage() {
     echo "    --password PASS        New password to be set"
     echo "    --vnc-password VNCPASS New VNC password to be set, max 8 chars"
     echo "                           (VNC doesn't allow more than 8 chars)"
+    echo "    --skip FLG             Use value 1 to skip this"
     echo "                                    "
     exit 2
 }
@@ -47,13 +48,13 @@ VNC_PASS_ARG=""
 while [ "$*" ]; do
     param=$1; shift; OPTARG=$1
     case $param in
-    --uid)           UID_ARG="${OPTARG}"; shift        ;;
-    --user)          USER_ARG="${OPTARG}"; shift       ;;
-    --password)      PASS_ARG="${OPTARG}"; shift       ;;
-    --vnc-password)  VNC_PASS_ARG="${OPTARG}"; shift   ;;
-    --skip)          SKIP_ARG="${OPTARG}"; shift       ;;
+    --uid)           UID_ARG="$OPTARG"; shift        ;;
+    --user)          USER_ARG="$OPTARG"; shift       ;;
+    --password)      PASS_ARG="$OPTARG"; shift       ;;
+    --vnc-password)  VNC_PASS_ARG="$OPTARG"; shift   ;;
+    --skip)          SKIP_ARG="$OPTARG"; shift       ;;
     -h|--help) usage                                   ;;
-    -*) usage "Unknown chrooter option: ${param}"      ;;
+    -*) usage "Unknown option: $param"               ;;
     *) break                                           ;;
     esac
 done
@@ -67,7 +68,7 @@ echo
 
 
 # Get Skip Flag
-if [ -z "${SKIP_ARG}" ]; then
+if [ -z "$SKIP_ARG" ]; then
     read -p "To skip this setup type [Y or y]: " SKIP_ARG
     echo
 fi
@@ -78,7 +79,7 @@ if [[ "$SKIP_ARG" =~ ^[yY]$ ]]; then skip; fi
 
 
 # Get User ID
-if [ -z "${UID_ARG}" ]; then
+if [ -z "$UID_ARG" ]; then
     read -p "Enter UID: " UID_ARG
     while ! [[ "$UID_ARG" =~ ^[0-9]{4}$ ]] ; do
         echo "Wrong UID, should be in format NNNN"
@@ -88,7 +89,7 @@ fi
 
 
 # Get User Name
-if [ -z "${USER_ARG}" ]; then
+if [ -z "$USER_ARG" ]; then
     read -p "User Name: " USER_ARG
     while ! [[ "$USER_ARG" =~ ^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\$)$ ]] ; do
         echo "Invalid User Name string, should not contain special chars and has max 31 chars"
@@ -98,7 +99,7 @@ fi
 
 
 # Get Password
-if [ -z "${PASS_ARG}" ]; then
+if [ -z "$PASS_ARG" ]; then
     read -s -p "Password: " PASS_ARG
     echo
     while [[ ${#PASS_ARG} -gt 128 ]] ; do
@@ -110,7 +111,7 @@ fi
 
 
 # Get VNC Password
-if [ -z "${VNCPASS_ARG}" ]; then    
+if [ -z "$VNCPASS_ARG" ]; then    
     read -s -p "VNC Password (max. 8 chars): " VNCPASS_ARG
     echo
     while [[ ${#VNCPASS_ARG} -gt 8 ]] ; do
@@ -122,50 +123,50 @@ fi
 
 
 # Find Original User Name
-USEROLD=$(id -nu ${UID_ARG})
+USEROLD=$(id -nu $UID_ARG)
 
 
 # Rename User
-usermod -l ${USER_ARG} ${USEROLD}
+usermod -l $USER_ARG $USEROLD
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename user from default user (usermod failed)"; fi
 
 
 # Rename User Group
-groupmod -n ${USER_ARG} ${USEROLD}
+groupmod -n $USER_ARG $USEROLD
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename user group from default user group (groupmod failed)"; fi
 
 
 # Rename VNC User
-sed -i "s/:1=${USEROLD}/:1=${USER_ARG}/g" /etc/tigervnc/vncserver.users
+sed -i "s/:1=$USEROLD/:1=$USER_ARG/g" /etc/tigervnc/vncserver.users
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot rename VNC user (sed failed)"; fi
 
 
 # Change User Home Directory
 mkdir -p /data/$(hostname)
 
-ln -s /data/$(hostname) /home/${USER_ARG}
+ln -s /data/$(hostname) /home/$USER_ARG
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (symlink failed)"; fi
 
-cp -R -n /home/${USEROLD}/. /home/${USER_ARG}
+cp -R -n /home/$USEROLD/. /home/$USER_ARG
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (recursive copy failed)"; fi
 
-chown -R ${USER_ARG}:${USER_ARG} /data/$(hostname)
+chown -R $USER_ARG:$USER_ARG /data/$(hostname)
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (chown failed)"; fi
 
-usermod -d /home/${USER_ARG} ${USER_ARG}
+usermod -d /home/$USER_ARG $USER_ARG
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user home directory (usermod failed)"; fi
 
-rm -R -f /home/${USEROLD}
+rm -R -f /home/$USEROLD
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot cleanup default home directory (rm failed)"; fi
 
 
 # Change Password
-echo "${USER_ARG}:${PASS_ARG}" | chpasswd
+echo "$USER_ARG:$PASS_ARG" | chpasswd
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change user password (chpasswd failed)"; fi
 
 
 # Change VNC Password
-echo "${VNCPASS_ARG}" | /usr/bin/vncpasswd -f > /home/${USER_ARG}/.vnc/passwd
+echo "$VNCPASS_ARG" | /usr/bin/vncpasswd -f > /home/$USER_ARG/.vnc/passwd
 STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot change VNC password (vncpasswd failed)"; fi
 
 

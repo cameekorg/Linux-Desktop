@@ -1,0 +1,172 @@
+#!/bin/bash
+
+usage() {
+    if [ "$*" ]; then
+        echo "$*"
+        echo
+    fi
+    echo "Usage: $NAME [--local-versions DIR] [--local-links DIR] [--shared-versions DIR] [--shared-links DIR] [--skip FLG]"
+    echo
+    echo "Sharing applications with other containers via shared volume"    
+    echo
+    echo "    --local-versions DIR   The directory with local applications"
+    echo "                           Default: /opt/versions"
+    echo "                           "
+    echo "    --local-links DIR      The directory with local links to apps"
+    echo "                           Default: /opt"
+    echo "                           "
+    echo "    --shared-versions DIR  The directory with shared applications"
+    echo "                           Default: /apps/shared/versions"
+    echo "                           "
+    echo "    --shared-links DIR     The directory with shared links to apps"
+    echo "                           Default: /apps/shared"
+    echo "                           "
+    echo "    --skip FLG             Use value 1 to skip this"
+    echo "                           "
+    exit 2
+}
+
+
+die() {
+    echo
+    echo "$*"
+    echo
+    exit 1
+}
+
+
+skip() {
+    echo
+    echo "Sharing applications skipped!"
+    echo
+    exit 0
+}
+
+
+# Default Arguments Values
+SKIP_ARG=""
+LOCVERSIONS_ARG="/opt/versions"
+LOCLINKS_ARG="/opt"
+SHRVERSIONS_ARG="/apps/shared/versions"
+SHRLINKS_ARG="/apps/shared"
+
+
+# Parse Arguments
+while [ "$*" ]; do
+    param=$1; shift; OPTARG=$1
+    case $param in
+    --local-versions )       LOCVERSIONS_ARG="$OPTARG"; shift    ;;
+    --local-links )          LOCLINKS_ARG="$OPTARG"; shift       ;;
+    --shared-versions )      SHRERSIONS_ARG="$OPTARG"; shift     ;;
+    --shared-links )         SHRLINKS_ARG="$OPTARG"; shift       ;;
+    --skip )                 SKIP_ARG="$OPTARG"; shift           ;;
+    -h|--help) usage                                             ;;
+    -*) usage "Unknown option: $param"                           ;;
+    *) break                                                     ;;
+    esac
+done
+
+
+# Print Title
+echo
+echo "Sharing applications with other containers via shared volume as a first-time action"
+echo "(recommended)"
+echo
+
+
+# Get Skip Flag
+if [ -z "$SKIP_ARG" ]; then
+    read -p "To skip this optimization type [Y or y]: " SKIP_ARG
+    echo
+fi
+
+# Skip process if user really wants
+if [[ "$SKIP_ARG" =~ ^[yY]$ ]]; then skip; fi
+
+# Auto-create missing dirs
+mkdir -p $LOCVERSIONS_ARG
+mkdir -p $LOCLINKS_ARG
+mkdir -p $SHRVERSIONS_ARG
+mkdir -p $SHRLINKS_ARG
+
+# Search local versions, like /opt/versions
+echo "Searching local versions in $LOCVERSIONS_ARG/*"
+for LOCVERDIR in $LOCVERSIONS_ARG/*; do
+
+    # LOCVERDIR = /opt/versions/jdk11
+    if [ -d "$LOCVERDIR" ]; then
+
+        # Search local versions sub-dirs, like /opt/versions/jdk11
+        echo "Searching local sub-versions in $LOCVERSIONS_ARG/${LOCVERDIR##*/}/*"
+        for LOCVERSUBDIR in $LOCVERSIONS_ARG/${LOCVERDIR##*/}/*; do
+
+            # LOCVERSUBDIR = /opt/versions/jdk11/jdk-11.0.16+8
+            if [ -d "$LOCVERSUBDIR" ]; then
+
+                echo "$LOCVERSIONS_ARG/${LOCVERDIR##*/}/${LOCVERSUBDIR##*/}"
+
+                # SHRVERDIR = /apps/shared/versions/jdk11
+                SHRVERDIR=$SHRVERSIONS_ARG/${LOCVERDIR##*/}
+
+                # SHRVERSUBDIR = /apps/shared/versions/jdk11/jdk-11.0.16+8
+                SHRVERSUBDIR=$SHRVERDIR/${LOCVERSUBDIR##*/}
+
+                # SHRLINK = /apps/shared/jdk11
+                SHRLINK=$SHRLINKS_ARG/${LOCVERDIR##*/}
+
+                # LOCLINK = /opt/jdk11
+                LOCLINK=$LOCLINKS_ARG/${LOCVERDIR##*/}
+
+                # If Apps Share has the dir, re-use it
+                if [ -d "$SHRVERSUBDIR" ]; then
+                    echo "Apps Share already have the directory $SHRVERSUBDIR"
+
+                    # Create Apps Share symlink /apps/shared/jdk11 -> /apps/shared/versions/jdk11/jdk-11.0.16+8
+                    if ![ -e "$SHRLINK" ]; then
+                        ln -sf $SHRVERSUBDIR $SHRLINK
+                        STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
+                    fi
+
+                    # Create local symlink /opt/jdk11 -> /apps/shared/jdk11
+                    ln -sf $SHRLINK $LOCLINK
+                    STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
+
+                    # Remove local redundant directory
+                    rm -rf $LOCVERSUBDIR
+                    STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot remove directory $LOCVERSUBDIR in Local"; fi
+
+                # If Apps Share doesn't have the dir, move Local one
+                else
+                    echo "Moving directory $LOCVERSUBDIR to $SHRVERSUBDIR"
+
+                    # Make sure Apps Share has sub-dirs
+                    mkdir -p $SHRVERDIR
+
+                    # Move Local dir to Apps Share
+                    mv -f $LOCVERSUBDIR $SHRVERDIR
+                    STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot move directory $LOCVERSUBDIR to $SHRVERSUBDIR in Apps Share"; fi
+
+                    # Retrieve truly last dir - highest version
+                    SHRVERSUBDIR=$(ls -d -1 $SHRVERDIR/*/ | tail -1)
+
+                    # Remove extra trailing slash
+                    SHRVERSUBDIR=${SHRVERSUBDIR%/}
+
+                    # Create Apps Share symlink /apps/shared/jdk11 -> /apps/shared/versions/jdk11/jdk-11.0.16+8
+                    ln -sf $SHRVERSUBDIR $SHRLINK
+                    STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
+
+                    # Create local symlink /opt/jdk11 -> /apps/shared/jdk11
+                    ln -sf $SHRLINK $LOCLINK
+                    STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
+                fi
+
+            fi
+        done
+    fi
+done
+
+# Success
+echo
+echo "Sharing applications finished."
+echo
