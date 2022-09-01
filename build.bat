@@ -1,3 +1,4 @@
+@echo.
 @echo Build Linux Desktop Base
 @echo ------------------------
 
