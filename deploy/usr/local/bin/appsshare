@@ -123,15 +123,18 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
 
                     # Create Apps Share symlink /shared/apps/jdk11 -> /shared/apps/versions/jdk11/jdk-11.0.16+8
                     if [ ! -e "$SHRLINK" ]; then
-                        ln -sf $SHRVERSUBDIR $SHRLINK
+                        echo "Creating symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"
+                        ln -snf $SHRVERSUBDIR $SHRLINK
                         STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
                     fi
 
                     # Create local symlink /opt/jdk11 -> /shared/apps/jdk11
-                    ln -sf $SHRLINK $LOCLINK
+                    echo "Creating symbolic link $LOCLINK to $SHRLINK in Local"
+                    ln -snf $SHRLINK $LOCLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
 
                     # Remove local redundant directory
+                    echo "Removing directory $LOCVERSUBDIR in Local"
                     rm -rf $LOCVERSUBDIR
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot remove directory $LOCVERSUBDIR in Local"; fi
 
@@ -143,6 +146,7 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
                     mkdir -p $SHRVERDIR
 
                     # Move Local dir to Apps Share
+                    echo "Moving directory $LOCVERSUBDIR to $SHRVERSUBDIR in Apps Share"
                     mv -f $LOCVERSUBDIR $SHRVERDIR
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot move directory $LOCVERSUBDIR to $SHRVERSUBDIR in Apps Share"; fi
 
@@ -153,10 +157,12 @@ for LOCVERDIR in $LOCVERSIONS_ARG/*; do
                     SHRVERSUBDIR=${SHRVERSUBDIR%/}
 
                     # Create Apps Share symlink /shared/apps/jdk11 -> /shared/apps/versions/jdk11/jdk-11.0.16+8
+                    echo "Creating symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"
                     ln -sf $SHRVERSUBDIR $SHRLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $SHRLINK to $SHRVERSUBDIR in Apps Share"; fi
 
                     # Create local symlink /opt/jdk11 -> /shared/apps/jdk11
+                    echo "Creating symbolic link $LOCLINK to $SHRLINK in Local"
                     ln -sf $SHRLINK $LOCLINK
                     STATUS=$?; if [ $STATUS -ne 0 ]; then die "Cannot create symbolic link $LOCLINK to $SHRLINK in Local"; fi
                 fi

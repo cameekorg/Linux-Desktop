@@ -26,8 +26,8 @@ ARG GRADLE_VERSION="7.5.1"
 ENV LC_ALL C.UTF-8
 
 
-# Copy Configurations & Scripts
-# -----------------------------
+# Copy Configurations & Scripts (without apply)
+# ---------------------------------------------
 COPY deploy $DEPLOY_DIR
 
 
@@ -112,10 +112,13 @@ RUN dnf update -y && dnf install -y \
 RUN dnf group install -y "Xfce"
 RUN dnf update -y && dnf install -y \
     firefox \
+    google-noto-sans-fonts \
     gnu-free-fonts-common \
     gnu-free-mono-fonts \
     gnu-free-sans-fonts \
     gnu-free-serif-fonts \
+    liberation-fonts \
+    liberation-serif-fonts \
     tigervnc-server
 RUN dnf remove -y xfce4-power-manager
 RUN dnf remove -y xfce4-screensaver
