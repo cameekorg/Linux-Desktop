@@ -1,3 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-docker build --tag cameek/linux-desktop-extend:0.1 .
+echo "Build Linux Desktop Extended"
+echo "----------------------------"
+
+docker build --tag cameek/linux-desktop-extend:0.3 .

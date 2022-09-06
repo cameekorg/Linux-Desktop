@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+EDGE_ARGS="--password-store=basic --no-sandbox --disable-gpu --user-data-dir --no-first-run"
+
+/opt/msedge/microsoft-edge ${EDGE_ARGS} "\$@"
