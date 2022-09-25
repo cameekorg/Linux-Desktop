@@ -1,10 +1,9 @@
 [Desktop Entry]
-Name=JD-GUI
-Comment=Java Decompiler JD-GUI
-Exec=java -jar /opt/jd-gui/jd-gui.jar
-StartupWMClass=org-jd-gui-App
+Name=Eclipse JEE
+Comment=Eclipse IDE for Enterprise Java and Web Developers 
 Terminal=false
+Exec=/opt/eclipse-jee/eclipse
 Type=Application
-Icon=/opt/jd-gui/jd_icon_128.png
+Icon=/opt/eclipse-jee/icon.xpm
 MimeType=application/java;application/java-vm;application/java-archive
 Categories=Development;IDE
