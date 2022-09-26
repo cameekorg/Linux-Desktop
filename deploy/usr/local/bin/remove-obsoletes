@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Remove Obsoletes"
+echo "----------------"
+echo ""
+
+echo "Removing /run/nologin file"
+rm -f /run/nologin
+echo "Done"
+echo ""
+
+echo "Removing /tmp/.X1-lock file"
+rm -f /tmp/.X1-lock
+echo "Done"
+echo

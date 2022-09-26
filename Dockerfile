@@ -56,12 +56,12 @@ RUN cp $DEPLOY_DIR/usr/local/bin/appsshare /usr/local/bin/appsshare
 RUN chmod 500 /usr/local/bin/appsshare
 
 
-# Remove Nologin Service Fix
-# --------------------------
-# Handle issues with Nologin after boot.
+# Remove Obsoletes Service Fix
+# ----------------------------
+# Handle issues with Nologin and VNC start after boot.
 # Ref: https://unix.stackexchange.com/questions/487742/system-is-booting-up-unprivileged-users-are-not-permitted-to-log-in-yet
-RUN cp $DEPLOY_DIR/usr/local/bin/remove-nologin /usr/local/bin/remove-nologin
-RUN chmod 500 /usr/local/bin/remove-nologin
+RUN cp $DEPLOY_DIR/usr/local/bin/remove-obsoletes /usr/local/bin/remove-obsoletes
+RUN chmod 500 /usr/local/bin/remove-obsoletes
 
 
 # Install Packages - Init
@@ -154,9 +154,14 @@ RUN chmod 600 /root/.bashrc
 # Add User to System
 # ------------------
 # Create user and set password. Add to wheel for sudo use.
-RUN useradd -m -s /bin/bash $USER
+RUN useradd -u 1000 -m -s /bin/bash $USER
 RUN echo "$USER:$PASSWORD" | chpasswd
 RUN usermod -aG wheel $USER
+
+
+# Add Group to System
+# -------------------
+RUN groupadd -g 1259 guiusr
 
 
 # User Config for VNC Server

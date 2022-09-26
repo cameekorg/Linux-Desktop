@@ -11,4 +11,4 @@ docker run -it \
  -p 8006:11 -p 22006:22 -p 59006:5901 \
  --name box-6 \
  --hostname box-6 \
- cameek/linux-desktop-base:0.3
+ cameek/linux-desktop-base:0.4
