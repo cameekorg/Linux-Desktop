@@ -1,4 +1,4 @@
-FROM cameek/linux-desktop-base:0.3
+FROM cameek/linux-desktop-base:0.4
 LABEL description="Extended Linux Desktop image"
 
 # External Arguments

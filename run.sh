@@ -10,4 +10,4 @@ docker run -it \
  -p 8008:11 -p 22008:22 -p 59008:5901 \
  --name box-8 \
  --hostname box-8 \
- cameek/linux-desktop-extend:0.3
+ cameek/linux-desktop-extend:0.4
